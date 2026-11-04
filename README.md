@@ -117,25 +117,6 @@ npm run lint
 # Build for production
 npm run build
 ```
-
----
-
-## 🗄️ Database Setup & Migrations
-
-All sequential PostgreSQL migrations are located in [`supabase/migrations/`](./supabase/migrations):
-
-1. **20261102000001_initial_schema.sql** — Core tables: businesses, branches, categories, products, orders, order items.
-2. **20261102000002_row_level_security.sql** — PostgreSQL Row Level Security (RLS) policies.
-3. **20261102000003_token_generation.sql** — Dynamic pickup token sequence (`#A001`, `#A002`, ...).
-4. **20261102000004_seed_samosa_shop.sql** — Initial authentic catalog seed.
-5. **20261102000005 - 20261102000011** — Payment hardening, token security, and cryptographic audits.
-6. **20261102000012 - 20261102000017** — Realtime publications, admin RPCs, and multi-tenant policies.
-7. **20261102000018_staff_auth_and_auto_confirm.sql** — Staff auth triggers, profile generation, and auto-confirmation.
-
-> **One-Click Setup:** A consolidated master SQL script is also available at [`supabase/setup_complete.sql`](./supabase/setup_complete.sql).
-
----
-
 ## 🌐 Production Deployment
 
 QuickBite OS is optimized for deployment on **Vercel**, **Netlify**, or **Cloudflare Pages**:
