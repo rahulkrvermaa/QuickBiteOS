@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ShoppingBag, ArrowRight, Search, AlertCircle, Bell, Lock } from 'lucide-react'
+import { ShoppingBag, ArrowRight, Search, AlertCircle, Bell } from 'lucide-react'
 import { ShopHeader } from '../components/shop-header'
 import { CategoryNav } from '../components/category-nav'
 import { ProductCard } from '../components/product-card'
@@ -291,24 +291,6 @@ export const ShopOrderingPage: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Store Footer with Discreet Merchant / Staff Portal Access */}
-      <footer className="max-w-3xl mx-auto px-4 pt-8 pb-24 border-t border-[#E6E2D8] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#8C8A84]">
-        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 text-center sm:text-left">
-          <span>🥟</span>
-          <span className="font-semibold text-[#20201E]">{business.name}</span>
-          <span>·</span>
-          <span>{business.address}, {business.city}</span>
-        </div>
-
-        <Link
-          to="/login"
-          className="inline-flex items-center gap-1.5 text-neutral-500 hover:text-[#D95732] font-semibold transition-colors bg-white/80 hover:bg-white border border-neutral-200/80 px-3 py-1.5 rounded-lg shadow-2xs"
-        >
-          <Lock className="w-3.5 h-3.5 text-[#D95732]" />
-          <span>Staff & Merchant Portal</span>
-        </Link>
-      </footer>
 
       {/* Product Detail Customizer Modal */}
       <ProductDetailModal
