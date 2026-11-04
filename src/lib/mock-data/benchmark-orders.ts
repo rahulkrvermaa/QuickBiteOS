@@ -1,0 +1,163 @@
+import type { Order } from '@/types/order'
+
+export const BENCHMARK_ORDERS: Order[] = [
+  {
+    id: 'ord_sample_01',
+    businessId: 'biz_samosa_corner_01',
+    branchId: 'br_main_01',
+    orderNumber: 'QB-2611-0041',
+    secureAccessToken: 'sec_tok_0041_ready',
+    customerName: 'Aman Sharma',
+    customerPhone: '+91 98111 22334',
+    status: 'READY',
+    paymentStatus: 'PAID',
+    paymentMethod: 'ONLINE_UPI',
+    subtotalPaisa: 5800, // ₹58
+    discountPaisa: 0,
+    taxPaisa: 290, // 5% GST = ₹2.90
+    totalPaisa: 6090, // ₹60.90
+    pickupToken: {
+      id: 'tok_0041',
+      orderId: 'ord_sample_01',
+      businessId: 'biz_samosa_corner_01',
+      branchId: 'br_main_01',
+      tokenDisplay: 'A041',
+      sequenceNum: 41,
+      tokenDate: '2026-11-02',
+      createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+    },
+    items: [
+      {
+        id: 'item_01',
+        orderId: 'ord_sample_01',
+        productId: 'prod_aloo_samosa',
+        itemNameSnapshot: 'Punjabi Aloo Samosa',
+        variantNameSnapshot: 'Plate of 2 pcs',
+        unitPricePaisa: 3800,
+        quantity: 1,
+        addonsSnapshot: [
+          { addonId: 'add_extra_saunth', name: 'Extra Saunth Sweet Chutney', pricePaisa: 500, quantity: 1 },
+        ],
+        lineTotalPaisa: 4300,
+      },
+      {
+        id: 'item_02',
+        orderId: 'ord_sample_01',
+        productId: 'prod_kulhad_chai',
+        itemNameSnapshot: 'Kulhad Masala Chai',
+        variantNameSnapshot: 'Regular Masala',
+        unitPricePaisa: 2000,
+        quantity: 1,
+        addonsSnapshot: [],
+        lineTotalPaisa: 2000,
+      },
+    ],
+    createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'ord_sample_02',
+    businessId: 'biz_samosa_corner_01',
+    branchId: 'br_main_01',
+    orderNumber: 'QB-2611-0042',
+    secureAccessToken: 'demo-token-123',
+    customerName: 'Priya Verma',
+    customerPhone: '+91 99222 33445',
+    status: 'PREPARING',
+    paymentStatus: 'PAID',
+    paymentMethod: 'ONLINE_UPI',
+    subtotalPaisa: 6000, // ₹60
+    discountPaisa: 0,
+    taxPaisa: 300, // 5% GST = ₹3.00
+    totalPaisa: 6300, // ₹63.00
+    pickupToken: {
+      id: 'tok_0042',
+      orderId: 'ord_sample_02',
+      businessId: 'biz_samosa_corner_01',
+      branchId: 'br_main_01',
+      tokenDisplay: 'A042',
+      sequenceNum: 42,
+      tokenDate: '2026-11-02',
+      createdAt: new Date(Date.now() - 8 * 60 * 1000).toISOString(),
+    },
+    items: [
+      {
+        id: 'item_03',
+        orderId: 'ord_sample_02',
+        productId: 'prod_paneer_samosa',
+        itemNameSnapshot: 'Paneer Tikka Samosa',
+        variantNameSnapshot: 'Single (1 pc)',
+        unitPricePaisa: 3500,
+        quantity: 1,
+        addonsSnapshot: [
+          { addonId: 'add_extra_mint_p', name: 'Extra Spicy Mint Chutney', pricePaisa: 500, quantity: 1 },
+        ],
+        lineTotalPaisa: 4000,
+      },
+      {
+        id: 'item_04',
+        orderId: 'ord_sample_02',
+        productId: 'prod_kulhad_chai',
+        itemNameSnapshot: 'Kulhad Masala Chai',
+        variantNameSnapshot: 'Extra Adrak & Elaichi',
+        unitPricePaisa: 2500,
+        quantity: 1,
+        addonsSnapshot: [],
+        lineTotalPaisa: 2500,
+      },
+    ],
+    createdAt: new Date(Date.now() - 8 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'ord_sample_03',
+    businessId: 'biz_samosa_corner_01',
+    branchId: 'br_main_01',
+    orderNumber: 'QB-2611-0043',
+    secureAccessToken: 'sec_tok_0043_new',
+    customerName: 'Rahul Mehta',
+    customerPhone: '+91 97333 44556',
+    status: 'PLACED',
+    paymentStatus: 'UNPAID',
+    paymentMethod: 'CASH_COUNTER',
+    subtotalPaisa: 10000, // ₹100
+    discountPaisa: 0,
+    taxPaisa: 500, // ₹5
+    totalPaisa: 10500, // ₹105
+    pickupToken: {
+      id: 'tok_0043',
+      orderId: 'ord_sample_03',
+      businessId: 'biz_samosa_corner_01',
+      branchId: 'br_main_01',
+      tokenDisplay: 'A043',
+      sequenceNum: 43,
+      tokenDate: '2026-11-02',
+      createdAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
+    },
+    items: [
+      {
+        id: 'item_05',
+        orderId: 'ord_sample_03',
+        productId: 'prod_pyaaz_kachori',
+        itemNameSnapshot: 'Jodhpuri Pyaaz Kachori',
+        unitPricePaisa: 3000,
+        quantity: 2,
+        addonsSnapshot: [],
+        lineTotalPaisa: 6000,
+      },
+      {
+        id: 'item_06',
+        orderId: 'ord_sample_03',
+        productId: 'prod_sweet_lassi',
+        itemNameSnapshot: 'Amritsari Sweet Lassi',
+        unitPricePaisa: 4000,
+        quantity: 1,
+        addonsSnapshot: [],
+        lineTotalPaisa: 4000,
+      },
+    ],
+    createdAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
+  },
+]
+

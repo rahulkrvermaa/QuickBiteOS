@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* Surface tokens */
+  --color-surface-bg: #F8F6F1;
+  --color-surface-card: #FFFFFF;
+  --color-surface-subtle: #F2EFE9;
+  --color-surface-border: #E6E2D8;
+
+  /* Typography tokens */
+  --color-text-primary: #20201E;
+  --color-text-secondary: #575653;
+  --color-text-tertiary: #8C8A84;
+
+  /* Brand Primary tokens (Tomato / Samosa Clay) */
+  --color-brand-primary: #D95732;
+  --color-brand-hover: #C24B29;
+  --color-brand-subtle: #FDF1ED;
+
+  /* Semantic status tokens */
+  --color-status-success: #247A52;
+  --color-status-success-bg: #EAF4EE;
+  --color-status-warning: #B8741A;
+  --color-status-warning-bg: #FDF7EC;
+  --color-status-danger: #C0352A;
+  --color-status-danger-bg: #FDEEED;
+  --color-status-info: #2B6CB0;
+  --color-status-info-bg: #EDF4FA;
+}
+
+/* Custom scrollbars & utilities */
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-surface-bg);
+    color: var(--color-text-primary);
+  }
+
+  /* Tabular numbers for price tags and tokens */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
