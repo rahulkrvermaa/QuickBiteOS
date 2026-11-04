@@ -1,5 +1,6 @@
 import type { Order } from '@/types/order'
 import { formatPaisaToINR } from '@/lib/currency'
+import { escapeHtml } from '@/lib/utils'
 
 export interface ItemSalesSummary {
   productId: string
@@ -223,11 +224,14 @@ export function exportEodReportToCsv(report: EodReport, shopName = 'Samosa Corne
 export function printZReport(report: EodReport, shopName = 'Samosa Corner'): void {
   if (typeof window === 'undefined') return
 
+  const cleanShopName = escapeHtml(shopName)
+  const cleanBusinessDate = escapeHtml(report.businessDate)
+
   const itemRows = report.itemBreakdown
     .map(
       (item) => `
       <div style="display:flex; justify-content:space-between; margin:2px 0;">
-        <span>${item.quantitySold}x ${item.itemName}</span>
+        <span>${escapeHtml(String(item.quantitySold))}x ${escapeHtml(item.itemName)}</span>
         <span>${formatPaisaToINR(item.totalRevenuePaisa)}</span>
       </div>
     `
@@ -239,7 +243,7 @@ export function printZReport(report: EodReport, shopName = 'Samosa Corner'): voi
     <html>
       <head>
         <meta charset="utf-8">
-        <title>EOD Z-Report ${report.businessDate}</title>
+        <title>EOD Z-Report ${cleanBusinessDate}</title>
         <style>
           @page { margin: 0; size: auto; }
           body {
@@ -259,10 +263,10 @@ export function printZReport(report: EodReport, shopName = 'Samosa Corner'): voi
         </style>
       </head>
       <body>
-        <div class="center bold" style="font-size: 15px;">${shopName}</div>
+        <div class="center bold" style="font-size: 15px;">${cleanShopName}</div>
         <div class="center bold">*** END-OF-DAY (EOD) Z-REPORT ***</div>
         <div class="divider"></div>
-        <div>BUSINESS DATE: ${report.businessDate}</div>
+        <div>BUSINESS DATE: ${cleanBusinessDate}</div>
         <div>SHIFT: 4:00 AM IST RESET</div>
         <div class="double-divider"></div>
 

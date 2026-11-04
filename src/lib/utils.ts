@@ -30,3 +30,17 @@ export function getElapsedMinutes(dateStringOrTimestamp: string | number | Date)
   return Math.max(0, Math.floor((now - past) / 60000))
 }
 
+/**
+ * Safely escapes HTML special characters to prevent Cross-Site Scripting (XSS).
+ */
+export function escapeHtml(unsafe: string | null | undefined): string {
+  if (unsafe == null) return ''
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+

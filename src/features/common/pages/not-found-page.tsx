@@ -19,17 +19,17 @@ export const NotFoundPage: React.FC = () => {
           Oops! Lost in the Sauce
         </h1>
 
-        {/* Description Body - Clean balanced wrapping with zero orphaned words */}
-        <p className="text-sm sm:text-[15px] md:text-base text-[#3D6247] leading-relaxed max-w-xl text-center text-balance font-normal mb-8 px-4">
-          It seems we&apos;ve run out of ingredients for this page! Unfortunately, the page you’re looking for has
-          either been moved or doesn’t exist. How about we guide you back home or help you find what you&apos;re
-          craving?
+        {/* Description Body - Clean 3-line layout matching original design */}
+        <p className="text-sm sm:text-[15px] md:text-base text-[#3D6247] leading-relaxed max-w-[640px] text-center font-normal mb-8 px-4">
+          It seems we&apos;ve run out of ingredients for this page! Unfortunately, the page<br className="hidden sm:inline" />{' '}
+          you’re looking for has either been moved or doesn’t exist. How about we<br className="hidden sm:inline" />{' '}
+          guide you back home or help you find what you’re craving?
         </p>
 
         {/* Back to Home Pill Button */}
         <Link
           to="/shop/samosa-corner"
-          className="inline-flex items-center justify-center px-8 py-2.5 sm:py-3 bg-[#DBE46F] hover:bg-[#D0DC5E] active:scale-98 text-[#325132] font-medium text-xs sm:text-sm rounded-full transition-all shadow-xs"
+          className="inline-flex items-center justify-center px-8 py-2.5 sm:py-3 bg-[#DBE46F] hover:bg-[#D0DC5E] active:scale-98 text-[#2A5132] font-medium text-xs sm:text-sm rounded-full transition-all shadow-none"
         >
           Back to Home
         </Link>

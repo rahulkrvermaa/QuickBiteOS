@@ -1,7 +1,7 @@
 import type { Order } from '@/types/order'
 import type { Business } from '@/types/domain'
 import { formatPaisaToINR } from '@/lib/currency'
-import { formatTimeIST } from '@/lib/utils'
+import { formatTimeIST, escapeHtml } from '@/lib/utils'
 
 export type PrintPaperWidth = '58mm' | '80mm'
 
@@ -141,24 +141,26 @@ function getThermalStyles(paperWidth: PrintPaperWidth = '58mm'): string {
  */
 export function printKOT(order: Order, options: PrintOptions = {}): void {
   const paperWidth = options.paperWidth || '58mm'
-  const shopName = options.shopName || 'QUICKBITE KITCHEN'
-  const tokenDisplay = order.pickupToken?.tokenDisplay || '---'
-  const timeStr = formatTimeIST(order.createdAt)
+  const shopName = escapeHtml(options.shopName || 'QUICKBITE KITCHEN')
+  const tokenDisplay = escapeHtml(order.pickupToken?.tokenDisplay || '---')
+  const timeStr = escapeHtml(formatTimeIST(order.createdAt))
+  const orderNumber = escapeHtml(order.orderNumber)
+  const customerName = escapeHtml(order.customerName)
 
   const itemsHtml = order.items
     .map((item) => {
       const addons =
         item.addonsSnapshot && item.addonsSnapshot.length > 0
-          ? item.addonsSnapshot.map((a) => `<div class="item-addon">+ ${a.name} (x${a.quantity})</div>`).join('')
+          ? item.addonsSnapshot.map((a) => `<div class="item-addon">+ ${escapeHtml(a.name)} (x${escapeHtml(String(a.quantity))})</div>`).join('')
           : ''
-      const variant = item.variantNameSnapshot ? `<div class="item-addon">[${item.variantNameSnapshot}]</div>` : ''
+      const variant = item.variantNameSnapshot ? `<div class="item-addon">[${escapeHtml(item.variantNameSnapshot)}]</div>` : ''
 
       return `
         <div class="item-row">
           <div class="flex-between">
             <div>
-              <span class="item-qty">${item.quantity}x</span>
-              <span class="bold">${item.itemNameSnapshot}</span>
+              <span class="item-qty">${escapeHtml(String(item.quantity))}x</span>
+              <span class="bold">${escapeHtml(item.itemNameSnapshot)}</span>
             </div>
           </div>
           ${variant}
@@ -172,7 +174,7 @@ export function printKOT(order: Order, options: PrintOptions = {}): void {
     ? `
       <div class="notes-box">
         <div class="bold">INSTRUCTIONS:</div>
-        <div>${order.notes}</div>
+        <div>${escapeHtml(order.notes)}</div>
       </div>
     `
     : ''
@@ -196,11 +198,11 @@ export function printKOT(order: Order, options: PrintOptions = {}): void {
         </div>
 
         <div class="flex-between">
-          <span>REF: ${order.orderNumber}</span>
+          <span>REF: ${orderNumber}</span>
           <span>${timeStr}</span>
         </div>
         <div class="flex-between">
-          <span>CUSTOMER: ${order.customerName}</span>
+          <span>CUSTOMER: ${customerName}</span>
           <span>${order.paymentMethod === 'CASH_COUNTER' ? '[CASH PENDING]' : '[ONLINE PAID]'}</span>
         </div>
 
@@ -230,28 +232,32 @@ export function printKOT(order: Order, options: PrintOptions = {}): void {
 export function printCustomerReceipt(order: Order, options: PrintOptions & { business?: Business } = {}): void {
   const paperWidth = options.paperWidth || '58mm'
   const biz = options.business
-  const shopName = options.shopName || biz?.name || 'SAMOSA CORNER'
-  const address =
+  const shopName = escapeHtml(options.shopName || biz?.name || 'SAMOSA CORNER')
+  const address = escapeHtml(
     options.address ||
     (biz?.address
       ? `${biz.address}, ${biz.city}`
       : 'Maharajganj Main Rd, near by Sharamahala, Located in: Kali Mandir maharajganj, Jamui, Bihar 811307')
-  const phone = options.phone || biz?.phone || '+91 83209 17837'
-  const tokenDisplay = order.pickupToken?.tokenDisplay || '---'
-  const timeStr = formatTimeIST(order.createdAt)
+  )
+  const phone = escapeHtml(options.phone || biz?.phone || '+91 83209 17837')
+  const tokenDisplay = escapeHtml(order.pickupToken?.tokenDisplay || '---')
+  const timeStr = escapeHtml(formatTimeIST(order.createdAt))
+  const orderNumber = escapeHtml(order.orderNumber)
+  const customerName = escapeHtml(order.customerName)
+  const customerPhone = escapeHtml(order.customerPhone)
 
   const itemsHtml = order.items
     .map((item) => {
       const addons =
         item.addonsSnapshot && item.addonsSnapshot.length > 0
-          ? item.addonsSnapshot.map((a) => `<div class="item-addon">+ ${a.name} (x${a.quantity})</div>`).join('')
+          ? item.addonsSnapshot.map((a) => `<div class="item-addon">+ ${escapeHtml(a.name)} (x${escapeHtml(String(a.quantity))})</div>`).join('')
           : ''
-      const variant = item.variantNameSnapshot ? `<div class="item-addon">[${item.variantNameSnapshot}]</div>` : ''
+      const variant = item.variantNameSnapshot ? `<div class="item-addon">[${escapeHtml(item.variantNameSnapshot)}]</div>` : ''
 
       return `
         <div class="item-row">
           <div class="flex-between">
-            <span class="bold">${item.quantity}x ${item.itemNameSnapshot}</span>
+            <span class="bold">${escapeHtml(String(item.quantity))}x ${escapeHtml(item.itemNameSnapshot)}</span>
             <span>${formatPaisaToINR(item.lineTotalPaisa)}</span>
           </div>
           ${variant}
@@ -266,7 +272,7 @@ export function printCustomerReceipt(order: Order, options: PrintOptions & { bus
     <html>
       <head>
         <meta charset="utf-8">
-        <title>Receipt #${order.orderNumber}</title>
+        <title>Receipt #${orderNumber}</title>
         <style>${getThermalStyles(paperWidth)}</style>
       </head>
       <body>
@@ -282,12 +288,12 @@ export function printCustomerReceipt(order: Order, options: PrintOptions & { bus
         </div>
 
         <div class="flex-between">
-          <span>BILL: ${order.orderNumber}</span>
+          <span>BILL: ${orderNumber}</span>
           <span>${timeStr}</span>
         </div>
         <div class="flex-between">
-          <span>CUST: ${order.customerName}</span>
-          <span>${order.customerPhone}</span>
+          <span>CUST: ${customerName}</span>
+          <span>${customerPhone}</span>
         </div>
 
         <div class="double-line"></div>

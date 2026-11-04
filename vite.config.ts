@@ -39,6 +39,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 600,
   },
   test: {
+    exclude: ['**/node_modules/**', '**/dist/**', '**/.kilo/**', '**/.temp/**'],
     fileParallelism: false,
     testTimeout: 25000,
   },

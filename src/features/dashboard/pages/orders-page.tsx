@@ -9,7 +9,7 @@ import { formatPaisaToINR } from '@/lib/currency'
 import { getElapsedMinutes } from '@/lib/utils'
 import { BENCHMARK_ORDERS } from '@/lib/mock-data/benchmark-orders'
 import { collectCashForOrder, getMerchantOrders, updateOrderStatus } from '@/services/order.service'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { isSupabaseConfigured } from '@/lib/supabase'
 import { subscribeToOrderEvents } from '@/services/realtime.service'
 import { printKOT, printCustomerReceipt } from '@/services/print.service'
 import { sendWhatsAppNotification } from '@/services/notification.service'
@@ -44,24 +44,11 @@ export const OrdersPage: React.FC = () => {
 
     const pollTimer = setInterval(() => {
       loadOrders()
-    }, 2500)
-
-    let pgChannel: any = null
-    if (isSupabaseConfigured) {
-      pgChannel = supabase
-        .channel('merchant-orders-feed')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-          loadOrders()
-        })
-        .subscribe()
-    }
+    }, 4000)
 
     return () => {
       unsubscribe()
       clearInterval(pollTimer)
-      if (pgChannel) {
-        supabase.removeChannel(pgChannel)
-      }
     }
   }, [loadOrders])
 

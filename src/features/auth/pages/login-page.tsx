@@ -1,17 +1,15 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '@/features/auth/auth-context'
-import { Lock, Mail, User, ShieldCheck, ArrowRight, Eye, EyeOff, Store, AlertCircle } from 'lucide-react'
+import { Lock, Mail, ShieldCheck, ArrowRight, Eye, EyeOff, Store, AlertCircle } from 'lucide-react'
 
 export const LoginPage: React.FC = () => {
-  const { user, signInWithEmail, signUpWithEmail } = useAuth()
+  const { user, signInWithEmail } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [fullName, setFullName] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -44,33 +42,15 @@ export const LoginPage: React.FC = () => {
     setIsSubmitting(true)
 
     try {
-      if (mode === 'signin') {
-        const { error } = await signInWithEmail(email, password)
-        if (error) {
-          setErrorMsg(error)
-        } else {
-          navigate(destination, { replace: true })
-        }
+      const { error } = await signInWithEmail(email, password)
+      if (error) {
+        setErrorMsg(error)
       } else {
-        const { error } = await signUpWithEmail(email, password, fullName)
-        if (error) {
-          setErrorMsg(error)
-        } else {
-          setSuccessMsg('Account registered successfully! Logging you in...')
-          setTimeout(() => {
-            navigate(destination, { replace: true })
-          }, 800)
-        }
+        navigate(destination, { replace: true })
       }
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  const fillDemoAccount = () => {
-    setEmail('admin@samosacorner.in')
-    setPassword('TemporaryPassword123!')
-    setErrorMsg(null)
   }
 
   return (
@@ -103,42 +83,10 @@ export const LoginPage: React.FC = () => {
             <div className="inline-flex items-center justify-center w-12 h-12 bg-[#D95732]/10 text-[#D95732] rounded-full mb-3">
               <ShieldCheck className="w-6 h-6" />
             </div>
-            <h1 className="text-2xl font-extrabold text-[#20201E] tracking-tight">Staff Authentication</h1>
+            <h1 className="text-2xl font-extrabold text-[#20201E] tracking-tight">Staff Sign In</h1>
             <p className="text-xs text-neutral-500 mt-1 max-w-xs mx-auto">
-              Protected access for Order Console, Kitchen KDS & Store Catalog Management
+              Authorized personnel only. Access to Order Console, Kitchen KDS & Catalog Management.
             </p>
-          </div>
-
-          {/* Mode Switcher Tabs */}
-          <div className="grid grid-cols-2 p-1 bg-neutral-100 rounded-xl mb-6">
-            <button
-              type="button"
-              onClick={() => {
-                setMode('signin')
-                setErrorMsg(null)
-              }}
-              className={`py-2 text-xs font-bold rounded-lg transition-all ${
-                mode === 'signin'
-                  ? 'bg-white text-[#20201E] shadow-2xs'
-                  : 'text-neutral-500 hover:text-[#20201E]'
-              }`}
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode('signup')
-                setErrorMsg(null)
-              }}
-              className={`py-2 text-xs font-bold rounded-lg transition-all ${
-                mode === 'signup'
-                  ? 'bg-white text-[#20201E] shadow-2xs'
-                  : 'text-neutral-500 hover:text-[#20201E]'
-              }`}
-            >
-              Register Staff
-            </button>
           </div>
 
           {/* Error & Success Alerts */}
@@ -158,24 +106,6 @@ export const LoginPage: React.FC = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === 'signup' && (
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 mb-1.5 uppercase tracking-wider">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="e.g. Rahul Sharma"
-                    className="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D95732]/20 focus:border-[#D95732] transition-colors"
-                  />
-                </div>
-              </div>
-            )}
-
             <div>
               <label className="block text-xs font-bold text-neutral-700 mb-1.5 uppercase tracking-wider">
                 Staff Email
@@ -187,7 +117,7 @@ export const LoginPage: React.FC = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@samosacorner.in"
+                  placeholder="Enter authorized email"
                   className="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#D95732]/20 focus:border-[#D95732] transition-colors"
                 />
               </div>
@@ -226,24 +156,12 @@ export const LoginPage: React.FC = () => {
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  <span>{mode === 'signin' ? 'Sign In to Dashboard' : 'Create Staff Account'}</span>
+                  <span>Sign In to Dashboard</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
           </form>
-
-          {/* Quick Demo Fill Helper */}
-          <div className="mt-6 pt-5 border-t border-neutral-100 flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={fillDemoAccount}
-              className="w-full py-2 px-3 text-xs font-semibold text-neutral-600 hover:text-[#D95732] bg-neutral-50 hover:bg-neutral-100 border border-dashed border-neutral-200 rounded-lg transition-colors flex items-center justify-center gap-1.5"
-            >
-              <span>Fill Default Owner Credentials</span>
-              <span className="font-mono text-[10px] bg-neutral-200/80 px-1.5 py-0.5 rounded text-neutral-700">admin@samosacorner.in</span>
-            </button>
-          </div>
         </div>
       </div>
 

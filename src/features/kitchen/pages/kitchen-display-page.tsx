@@ -16,7 +16,7 @@ import { formatTimeIST, getElapsedMinutes } from '@/lib/utils'
 import { BENCHMARK_ORDERS } from '@/lib/mock-data/benchmark-orders'
 import { getMerchantOrders, updateOrderStatus } from '@/services/order.service'
 import { getActiveBusiness } from '@/services/catalog.service'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { isSupabaseConfigured } from '@/lib/supabase'
 import { playKitchenAlertChime } from '@/lib/sound'
 import { subscribeToOrderEvents } from '@/services/realtime.service'
 import { printKOT } from '@/services/print.service'
@@ -64,28 +64,14 @@ export const KitchenDisplayPage: React.FC = () => {
       }
     })
 
-    // 4. Polling fallback: automatically check queue every 2.5 seconds so tickets appear even if network hiccups
+    // 4. Polling fallback: automatically check queue every 3.5 seconds so tickets appear even if network hiccups
     const pollTimer = setInterval(() => {
       loadOrders(false)
-    }, 2500)
-
-    // 5. Optional database CDC channel if configured
-    let pgChannel: any = null
-    if (isSupabaseConfigured) {
-      pgChannel = supabase
-        .channel('kitchen-kds-feed')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-          loadOrders(true)
-        })
-        .subscribe()
-    }
+    }, 3500)
 
     return () => {
       unsubscribe()
       clearInterval(pollTimer)
-      if (pgChannel) {
-        supabase.removeChannel(pgChannel)
-      }
     }
   }, [loadOrders, soundEnabled])
 
@@ -94,11 +80,6 @@ export const KitchenDisplayPage: React.FC = () => {
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, status: nextStatus, updatedAt: new Date().toISOString() } : o))
     )
-
-    const targetOrder = orders.find((o) => o.id === orderId)
-    if (nextStatus === 'READY' && targetOrder) {
-      sendWhatsAppNotification(targetOrder, { shopName })
-    }
 
     try {
       await updateOrderStatus(orderId, nextStatus)
@@ -352,16 +333,24 @@ export const KitchenDisplayPage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Button
                         onClick={() => handleStatusTransition(order.id, 'READY')}
-                        className="flex-1 bg-[#247A52] hover:bg-[#1D6343] text-white font-bold text-sm py-2"
+                        className="flex-1 bg-[#247A52] hover:bg-[#1D6343] text-white font-bold text-xs py-2.5 flex items-center justify-center gap-1.5 shadow-sm transition-colors"
                       >
-                        <CheckCircle2 className="w-4 h-4 mr-1.5" />
-                        <span>Mark Ready & Ping WhatsApp</span>
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Mark Ready</span>
                       </Button>
                       <button
                         type="button"
+                        onClick={() => sendWhatsAppNotification(order, { shopName })}
+                        className="p-2.5 rounded-lg bg-[#25D366]/20 hover:bg-[#25D366]/30 text-[#25D366] border border-[#25D366]/40 transition-colors"
+                        title="Send WhatsApp Notification"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => printKOT(order, { shopName })}
-                        className="p-2 rounded-lg bg-[#33312E] hover:bg-[#45423E] text-[#E6E2D8] border border-[#3E3C38] transition-colors"
-                        title="Print KOT Thermal Ticket"
+                        className="p-2.5 rounded-lg bg-[#33312E] hover:bg-[#45423E] text-[#E6E2D8] border border-[#3E3C38] transition-colors"
+                        title="Print Ticket"
                       >
                         <Printer className="w-4 h-4" />
                       </button>

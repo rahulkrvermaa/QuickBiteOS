@@ -196,7 +196,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               <div>
                 <label className="block text-xs font-medium text-[#575653] mb-1">Your Name</label>
                 <Input
-                  placeholder="e.g. Rahul Sharma"
+                  placeholder="e.g. Rahul Verma"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   error={errors.name}
@@ -207,7 +207,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <label className="block text-xs font-medium text-[#575653] mb-1">Mobile Number (10 Digits)</label>
                 <Input
                   type="tel"
-                  placeholder="e.g. 8320917837"
+                  placeholder="e.g.8390507436"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
                   error={errors.phone}

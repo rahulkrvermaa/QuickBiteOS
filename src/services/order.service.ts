@@ -40,16 +40,16 @@ const STORAGE_KEY = 'quickbite_orders_store'
 const inMemoryOrders = new Map<string, Order>()
 
 function hydrateFromLocalStorage(): void {
+  // In live Supabase mode, the database is the sole authoritative store.
+  // We only hydrate localStorage when running in offline / mock mode.
+  if (isSupabaseConfigured) return
+
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY)
       if (raw) {
         const parsed: Order[] = JSON.parse(raw)
         for (const order of parsed) {
-          // Never hydrate mock benchmark orders (#A041, #A042, #A043) in live Supabase mode
-          if (isSupabaseConfigured && BENCHMARK_ORDERS.some((b) => b.id === order.id)) {
-            continue
-          }
           inMemoryOrders.set(order.secureAccessToken, order)
         }
       }
@@ -66,13 +66,16 @@ if (!isSupabaseConfigured) {
   }
 }
 
-// Always hydrate non-benchmark custom orders (e.g. freshly placed customer orders)
+// Hydrate custom orders in offline / mock mode
 hydrateFromLocalStorage()
 
 export function persistOrder(order: Order): void {
   inMemoryOrders.set(order.secureAccessToken, order)
 
-  if (typeof window !== 'undefined' && window.localStorage) {
+  // In live Supabase mode, the database is authoritative.
+  // We only serialize all orders to localStorage in offline / demo mode to avoid
+  // leaking customer tokens/PII into localStorage and eliminate blocking O(n) overhead.
+  if (!isSupabaseConfigured && typeof window !== 'undefined' && window.localStorage) {
     try {
       const customOrders = Array.from(inMemoryOrders.values()).filter(
         (o) => !BENCHMARK_ORDERS.some((b) => b.id === o.id)
@@ -510,60 +513,8 @@ export async function getOrderBySecureToken(secureAccessToken: string): Promise<
         persistOrder(authoritativeOrder)
         return authoritativeOrder
       }
-
-      // 2. Fallback to direct query if RPC is not yet applied on remote DB
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*, order_items(*), pickup_tokens(*)')
-        .eq('secure_access_token', secureAccessToken)
-        .single()
-
-      if (!error && data) {
-        return {
-          id: data.id,
-          businessId: data.business_id,
-          branchId: data.branch_id,
-          orderNumber: data.order_number,
-          secureAccessToken: data.secure_access_token,
-          customerName: data.customer_name,
-          customerPhone: data.customer_phone,
-          status: data.status,
-          paymentStatus: data.payment_status,
-          paymentMethod: data.payment_method,
-          subtotalPaisa: Number(data.subtotal_paisa),
-          discountPaisa: Number(data.discount_paisa),
-          taxPaisa: Number(data.tax_paisa),
-          totalPaisa: Number(data.total_paisa),
-          notes: data.notes,
-          pickupToken: data.pickup_tokens?.[0]
-            ? {
-                id: data.pickup_tokens[0].id,
-                orderId: data.pickup_tokens[0].order_id,
-                businessId: data.pickup_tokens[0].business_id,
-                branchId: data.pickup_tokens[0].branch_id,
-                tokenDisplay: data.pickup_tokens[0].token_display,
-                sequenceNum: Number(data.pickup_tokens[0].sequence_num),
-                tokenDate: data.pickup_tokens[0].token_date,
-                createdAt: data.pickup_tokens[0].created_at,
-              }
-            : undefined,
-          items: data.order_items.map((i: any) => ({
-            id: i.id,
-            orderId: i.order_id,
-            productId: i.product_id,
-            itemNameSnapshot: i.item_name_snapshot,
-            variantNameSnapshot: i.variant_name_snapshot,
-            unitPricePaisa: Number(i.unit_price_paisa),
-            quantity: i.quantity,
-            addonsSnapshot: i.addons_snapshot,
-            lineTotalPaisa: Number(i.line_total_paisa),
-          })),
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-        }
-      }
     } catch (err) {
-      console.warn('Could not fetch from Supabase, checking local store:', err)
+      console.warn('Could not fetch from Supabase RPC:', err)
     }
   }
 
@@ -658,7 +609,7 @@ export async function getMerchantOrders(businessId?: string): Promise<Order[]> {
           inMemoryOrders.set(o.secureAccessToken, o)
         }
 
-        // Include any local non-benchmark orders not yet synced to Supabase
+        // Include any local non-benchmark orders (e.g. offline demo or test orders)
         const remoteIds = new Set(mapped.map((m) => m.id))
         const localUnsynced = Array.from(inMemoryOrders.values()).filter(
           (o) => !remoteIds.has(o.id) && !BENCHMARK_ORDERS.some((b) => b.id === o.id)
@@ -670,99 +621,12 @@ export async function getMerchantOrders(businessId?: string): Promise<Order[]> {
         )
       }
 
-      // 2. Fallback to direct query if RPC is not yet created
-      let query = supabase
-        .from('orders')
-        .select('*, order_items(*), pickup_tokens(*)')
-        .order('created_at', { ascending: false })
-        .limit(100)
-
-      if (businessId && isUuid(businessId)) {
-        query = query.eq('business_id', businessId)
-      }
-
-      const { data, error } = await query
-
-      if (!error && Array.isArray(data)) {
-        if (data.length === 0) {
-          if (inMemoryOrders.size > 0) {
-            return Array.from(inMemoryOrders.values()).sort(
-              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-            )
-          }
-          return []
-        }
-
-        const mapped = data.map((d: any) => ({
-          id: d.id,
-          businessId: d.business_id,
-          branchId: d.branch_id,
-          orderNumber: d.order_number,
-          secureAccessToken: d.secure_access_token,
-          customerName: d.customer_name,
-          customerPhone: d.customer_phone,
-          status: d.status,
-          paymentStatus: d.payment_status,
-          paymentMethod: d.payment_method,
-          subtotalPaisa: Number(d.subtotal_paisa),
-          discountPaisa: Number(d.discount_paisa || 0),
-          taxPaisa: Number(d.tax_paisa),
-          totalPaisa: Number(d.total_paisa),
-          notes: d.notes,
-          pickupToken: d.pickup_tokens?.[0]
-            ? {
-                id: d.pickup_tokens[0].id,
-                orderId: d.pickup_tokens[0].order_id,
-                businessId: d.pickup_tokens[0].business_id,
-                branchId: d.pickup_tokens[0].branch_id,
-                tokenDisplay: d.pickup_tokens[0].token_display,
-                sequenceNum: Number(d.pickup_tokens[0].sequence_num),
-                tokenDate: d.pickup_tokens[0].token_date,
-                createdAt: d.pickup_tokens[0].created_at,
-              }
-            : undefined,
-          items: (d.order_items || []).map((i: any) => ({
-            id: i.id,
-            orderId: i.order_id,
-            productId: i.product_id,
-            itemNameSnapshot: i.item_name_snapshot,
-            variantNameSnapshot: i.variant_name_snapshot,
-            unitPricePaisa: Number(i.unit_price_paisa),
-            quantity: i.quantity,
-            addonsSnapshot: i.addons_snapshot || [],
-            lineTotalPaisa: Number(i.line_total_paisa),
-          })),
-          createdAt: d.created_at,
-          updatedAt: d.updated_at,
-        }))
-
-        // Cache live orders in inMemoryOrders for synchronous lookups
-        for (const o of mapped) {
-          inMemoryOrders.set(o.secureAccessToken, o)
-        }
-
-        const remoteIds = new Set(mapped.map((m) => m.id))
-        const localUnsynced = Array.from(inMemoryOrders.values()).filter(
-          (o) => !remoteIds.has(o.id) && !BENCHMARK_ORDERS.some((b) => b.id === o.id)
-        )
-        const combined = [...mapped, ...localUnsynced]
-
-        return combined.sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )
+      if (rpcError) {
+        console.warn('Supabase get_merchant_orders RPC error:', rpcError.message)
       }
     } catch (err) {
-      console.warn('Could not fetch merchant orders from Supabase:', err)
+      console.warn('Could not fetch merchant orders from Supabase RPC:', err)
     }
-
-    if (inMemoryOrders.size > 0) {
-      return Array.from(inMemoryOrders.values()).sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      )
-    }
-
-    // In live Supabase mode, if query returned empty or failed to load, don't show fake benchmark orders
-    return []
   }
 
   // Return in-memory orders sorted by creation time descending (demo mode only)
@@ -850,17 +714,12 @@ export async function updateOrderStatus(orderId: string, nextStatus: OrderStatus
         return updated
       }
 
-      // 2. Fallback to direct table update
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: nextStatus, updated_at: now })
-        .eq('id', orderId)
-
-      if (error) {
-        console.warn('Failed to update order status in Supabase:', error.message)
+      if (rpcError) {
+        throw new Error(rpcError.message)
       }
     } catch (err) {
       console.warn('Supabase update status error:', err)
+      throw err
     }
   }
 

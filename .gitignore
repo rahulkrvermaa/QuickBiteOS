@@ -29,3 +29,7 @@ dist-ssr
 # Supabase CLI temp files
 .temp/
 supabase/.temp/
+
+# Agent worktrees & local scratch
+.kilo/
+

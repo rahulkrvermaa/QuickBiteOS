@@ -94,37 +94,46 @@ function ensureSharedChannel() {
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload: any) => {
           const row = (payload.eventType === 'DELETE' ? payload.old : payload.new) || payload.old || payload.new || {}
-          notifyOrderListeners({
-            eventType: payload.eventType === 'INSERT' ? 'ORDER_PLACED' : 'STATUS_CHANGED',
-            orderId: row.id,
-            secureAccessToken: row.secure_access_token,
-            businessId: row.business_id,
-            status: row.status,
-            paymentStatus: row.payment_status,
-            timestamp: Date.now(),
-          })
+          notifyOrderListeners(
+            {
+              eventType: payload.eventType === 'INSERT' ? 'ORDER_PLACED' : 'STATUS_CHANGED',
+              orderId: row.id,
+              secureAccessToken: row.secure_access_token,
+              businessId: row.business_id,
+              status: row.status,
+              paymentStatus: row.payment_status,
+              timestamp: Date.now(),
+            },
+            false // debounce background CDC
+          )
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload: any) => {
           const row = (payload.eventType === 'DELETE' ? payload.old : payload.new) || payload.old || payload.new || {}
-          notifyCatalogListeners({
-            eventType:
-              payload.eventType === 'INSERT'
-                ? 'PRODUCT_CREATED'
-                : payload.eventType === 'DELETE'
-                ? 'PRODUCT_DELETED'
-                : 'CATALOG_UPDATED',
-            productId: row.id,
-            isAvailable: row.is_available,
-            basePricePaisa: row.base_price_paisa ? Number(row.base_price_paisa) : undefined,
-            product: row,
-            timestamp: Date.now(),
-          })
+          notifyCatalogListeners(
+            {
+              eventType:
+                payload.eventType === 'INSERT'
+                  ? 'PRODUCT_CREATED'
+                  : payload.eventType === 'DELETE'
+                  ? 'PRODUCT_DELETED'
+                  : 'CATALOG_UPDATED',
+              productId: row.id,
+              isAvailable: row.is_available,
+              basePricePaisa: row.base_price_paisa ? Number(row.base_price_paisa) : undefined,
+              product: row,
+              timestamp: Date.now(),
+            },
+            false // debounce background CDC
+          )
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => {
-          notifyCatalogListeners({
-            eventType: 'CATALOG_UPDATED',
-            timestamp: Date.now(),
-          })
+          notifyCatalogListeners(
+            {
+              eventType: 'CATALOG_UPDATED',
+              timestamp: Date.now(),
+            },
+            false // debounce background CDC
+          )
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'businesses' }, (payload: any) => {
           const row = (payload.eventType === 'DELETE' ? payload.old : payload.new) || payload.old || payload.new || {}
@@ -149,7 +158,10 @@ function ensureSharedChannel() {
   return sharedChannel
 }
 
-function notifyOrderListeners(payload: OrderRealtimePayload): void {
+let orderDebounceTimer: ReturnType<typeof setTimeout> | null = null
+let pendingOrderPayloads: OrderRealtimePayload[] = []
+
+function dispatchOrderListeners(payload: OrderRealtimePayload): void {
   for (const cb of Array.from(orderListeners)) {
     try {
       cb(payload)
@@ -159,13 +171,52 @@ function notifyOrderListeners(payload: OrderRealtimePayload): void {
   }
 }
 
-function notifyCatalogListeners(payload: CatalogRealtimePayload): void {
+function notifyOrderListeners(payload: OrderRealtimePayload, immediate = true): void {
+  if (immediate) {
+    dispatchOrderListeners(payload)
+    return
+  }
+  pendingOrderPayloads.push(payload)
+  if (!orderDebounceTimer) {
+    orderDebounceTimer = setTimeout(() => {
+      orderDebounceTimer = null
+      const last = pendingOrderPayloads[pendingOrderPayloads.length - 1]
+      pendingOrderPayloads = []
+      if (last) {
+        dispatchOrderListeners(last)
+      }
+    }, 60)
+  }
+}
+
+let catalogDebounceTimer: ReturnType<typeof setTimeout> | null = null
+let pendingCatalogPayloads: CatalogRealtimePayload[] = []
+
+function dispatchCatalogListeners(payload: CatalogRealtimePayload): void {
   for (const cb of Array.from(catalogListeners)) {
     try {
       cb(payload)
     } catch (e) {
       console.warn('Error in catalog event listener:', e)
     }
+  }
+}
+
+function notifyCatalogListeners(payload: CatalogRealtimePayload, immediate = true): void {
+  if (immediate) {
+    dispatchCatalogListeners(payload)
+    return
+  }
+  pendingCatalogPayloads.push(payload)
+  if (!catalogDebounceTimer) {
+    catalogDebounceTimer = setTimeout(() => {
+      catalogDebounceTimer = null
+      const last = pendingCatalogPayloads[pendingCatalogPayloads.length - 1]
+      pendingCatalogPayloads = []
+      if (last) {
+        dispatchCatalogListeners(last)
+      }
+    }, 60)
   }
 }
 

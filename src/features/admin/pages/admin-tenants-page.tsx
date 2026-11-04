@@ -76,7 +76,7 @@ const SAMPLE_TENANTS: TenantRecord[] = [
     id: 'biz_samosa_corner_01',
     name: 'Samosa Corner',
     slug: 'samosa-corner',
-    ownerEmail: 'owner@samosacorner.in',
+    ownerEmail: 'rahulkrverma0143@gmail.com',
     city: 'Jamui, Bihar',
     branchesCount: 1,
     planTier: 'Starter',

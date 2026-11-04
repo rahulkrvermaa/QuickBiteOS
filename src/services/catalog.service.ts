@@ -24,6 +24,7 @@ export interface CatalogOverrides {
   prices: Record<string, number>
   deletedProductIds: string[]
   customProducts: Product[]
+  updatedAt?: number
 }
 
 let inMemoryCatalogOverrides: CatalogOverrides = {
@@ -44,11 +45,23 @@ export function getLocalCatalogOverrides(): CatalogOverrides {
       const raw = window.localStorage.getItem(CATALOG_OVERRIDES_STORAGE_KEY)
       if (raw) {
         const parsed = JSON.parse(raw)
-        inMemoryCatalogOverrides = {
-          availability: parsed.availability || {},
-          prices: parsed.prices || {},
-          deletedProductIds: Array.isArray(parsed.deletedProductIds) ? parsed.deletedProductIds : [],
-          customProducts: Array.isArray(parsed.customProducts) ? parsed.customProducts : [],
+        // If overrides are stale (e.g. older than 10 minutes), expire them so live server is source of truth
+        if (parsed.updatedAt && Date.now() - parsed.updatedAt > 10 * 60 * 1000) {
+          window.localStorage.removeItem(CATALOG_OVERRIDES_STORAGE_KEY)
+          inMemoryCatalogOverrides = {
+            availability: {},
+            prices: {},
+            deletedProductIds: [],
+            customProducts: [],
+          }
+        } else {
+          inMemoryCatalogOverrides = {
+            availability: parsed.availability || {},
+            prices: parsed.prices || {},
+            deletedProductIds: Array.isArray(parsed.deletedProductIds) ? parsed.deletedProductIds : [],
+            customProducts: Array.isArray(parsed.customProducts) ? parsed.customProducts : [],
+            updatedAt: parsed.updatedAt,
+          }
         }
       }
     } catch {
@@ -59,10 +72,13 @@ export function getLocalCatalogOverrides(): CatalogOverrides {
 }
 
 export function saveLocalCatalogOverrides(overrides: CatalogOverrides): void {
-  inMemoryCatalogOverrides = overrides
+  inMemoryCatalogOverrides = {
+    ...overrides,
+    updatedAt: Date.now(),
+  }
   if (typeof window !== 'undefined' && window.localStorage) {
     try {
-      window.localStorage.setItem(CATALOG_OVERRIDES_STORAGE_KEY, JSON.stringify(overrides))
+      window.localStorage.setItem(CATALOG_OVERRIDES_STORAGE_KEY, JSON.stringify(inMemoryCatalogOverrides))
     } catch {
       // Ignore
     }

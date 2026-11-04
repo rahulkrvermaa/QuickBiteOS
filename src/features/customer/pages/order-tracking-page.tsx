@@ -16,7 +16,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatPaisaToINR } from '@/lib/currency'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { getOrderBySecureToken } from '@/services/order.service'
 import {
   startRazorpayCheckout,
@@ -118,31 +117,8 @@ export const OrderTrackingPage: React.FC = () => {
       }
     })
 
-    let pgChannel: any = null
-    if (order?.id && isSupabaseConfigured) {
-      pgChannel = supabase
-        .channel(`order-track-${order.id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'orders',
-            filter: `id=eq.${order.id}`,
-          },
-          () => {
-            queryClient.invalidateQueries({ queryKey: ['customer-order', secureAccessToken] })
-            queryClient.refetchQueries({ queryKey: ['customer-order', secureAccessToken] })
-          }
-        )
-        .subscribe()
-    }
-
     return () => {
       unsubscribe()
-      if (pgChannel) {
-        supabase.removeChannel(pgChannel)
-      }
     }
   }, [order?.id, secureAccessToken, queryClient])
 

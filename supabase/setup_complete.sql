@@ -2253,7 +2253,74 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Gate and disable insecure auto-confirm/auto-link trigger
 DROP TRIGGER IF EXISTS on_auth_user_created_profile ON auth.users;
-CREATE TRIGGER on_auth_user_created_profile
-    AFTER INSERT ON auth.users
-    FOR EACH ROW EXECUTE FUNCTION public.handle_new_staff_profile();
+DROP FUNCTION IF EXISTS public.handle_new_staff_profile();
+
+-- =====================================================================
+-- 10. Security Hardening & Audit Remediations (Migration 000019)
+-- =====================================================================
+
+DROP POLICY IF EXISTS "Public can view orders" ON public.orders;
+DROP POLICY IF EXISTS "Public can view order items" ON public.order_items;
+DROP POLICY IF EXISTS "Public can view pickup tokens" ON public.pickup_tokens;
+DROP POLICY IF EXISTS "Public can view all products" ON public.products;
+
+DROP POLICY IF EXISTS "Staff can view business orders" ON public.orders;
+CREATE POLICY "Staff can view business orders"
+ON public.orders FOR SELECT
+TO authenticated
+USING (business_id = public.get_auth_business_id());
+
+DROP POLICY IF EXISTS "Staff can view business order items" ON public.order_items;
+CREATE POLICY "Staff can view business order items"
+ON public.order_items FOR SELECT
+TO authenticated
+USING (EXISTS (
+    SELECT 1 FROM public.orders o
+    WHERE o.id = order_items.order_id
+      AND o.business_id = public.get_auth_business_id()
+));
+
+DROP POLICY IF EXISTS "Staff can view pickup tokens" ON public.pickup_tokens;
+CREATE POLICY "Staff can view pickup tokens"
+ON public.pickup_tokens FOR SELECT
+TO authenticated
+USING (business_id = public.get_auth_business_id());
+
+DROP POLICY IF EXISTS "Public can view active products" ON public.products;
+CREATE POLICY "Public can view active products"
+ON public.products FOR SELECT
+TO anon, authenticated
+USING (EXISTS (
+    SELECT 1 FROM public.businesses b
+    WHERE b.id = products.business_id
+      AND b.is_active = true
+));
+
+REVOKE EXECUTE ON FUNCTION public.collect_cash_order(UUID) FROM anon, PUBLIC;
+GRANT EXECUTE ON FUNCTION public.collect_cash_order(UUID) TO authenticated, service_role;
+
+REVOKE EXECUTE ON FUNCTION public.update_order_status(UUID, VARCHAR, TEXT) FROM anon, PUBLIC;
+GRANT EXECUTE ON FUNCTION public.update_order_status(UUID, VARCHAR, TEXT) TO authenticated, service_role;
+
+REVOKE EXECUTE ON FUNCTION public.get_merchant_orders(UUID) FROM anon, PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_merchant_orders(UUID) TO authenticated, service_role;
+
+REVOKE EXECUTE ON FUNCTION public.admin_toggle_product_availability(UUID, BOOLEAN) FROM anon, PUBLIC;
+GRANT EXECUTE ON FUNCTION public.admin_toggle_product_availability(UUID, BOOLEAN) TO authenticated, service_role;
+
+REVOKE EXECUTE ON FUNCTION public.admin_update_product_price(UUID, BIGINT) FROM anon, PUBLIC;
+GRANT EXECUTE ON FUNCTION public.admin_update_product_price(UUID, BIGINT) TO authenticated, service_role;
+
+REVOKE EXECUTE ON FUNCTION public.admin_create_product(UUID, UUID, TEXT, TEXT, BIGINT, BOOLEAN, BOOLEAN) FROM anon, PUBLIC;
+GRANT EXECUTE ON FUNCTION public.admin_create_product(UUID, UUID, TEXT, TEXT, BIGINT, BOOLEAN, BOOLEAN) TO authenticated, service_role;
+
+REVOKE EXECUTE ON FUNCTION public.admin_delete_product(UUID) FROM anon, PUBLIC;
+GRANT EXECUTE ON FUNCTION public.admin_delete_product(UUID) TO authenticated, service_role;
+
+REVOKE EXECUTE ON FUNCTION public.admin_create_business(TEXT, TEXT, TEXT, TEXT, VARCHAR) FROM anon, PUBLIC;
+GRANT EXECUTE ON FUNCTION public.admin_create_business(TEXT, TEXT, TEXT, TEXT, VARCHAR) TO authenticated, service_role;
+
+REVOKE EXECUTE ON FUNCTION public.admin_delete_business(UUID) FROM anon, PUBLIC;
+GRANT EXECUTE ON FUNCTION public.admin_delete_business(UUID) TO authenticated, service_role;

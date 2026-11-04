@@ -25,20 +25,12 @@ serve(async (req) => {
 
     const cleanSecret = (val?: string): string => val?.trim().replace(/^["']|["']$/g, '') ?? ''
 
-    const razorpayKeyId = cleanSecret(Deno.env.get('RAZORPAY_KEY_ID') || Deno.env.get('Test_API_Key'))
-    let razorpayKeySecret = cleanSecret(Deno.env.get('RAZORPAY_KEY_SECRET'))
+    const razorpayKeyId = cleanSecret(Deno.env.get('RAZORPAY_KEY_ID'))
+    const razorpayKeySecret = cleanSecret(Deno.env.get('RAZORPAY_KEY_SECRET'))
 
-    // Resilience: If RAZORPAY_KEY_SECRET is empty OR misconfigured identical to KEY_ID,
-    // gracefully fall back to Test_Key_Secret or RAZORPAY_WEBHOOK_SECRET
-    if (!razorpayKeySecret || razorpayKeySecret === razorpayKeyId) {
-      razorpayKeySecret = cleanSecret(
-        Deno.env.get('Test_Key_Secret') || Deno.env.get('RAZORPAY_WEBHOOK_SECRET')
-      )
-    }
-
-    if (!razorpayKeyId || !razorpayKeySecret) {
+    if (!razorpayKeyId || !razorpayKeySecret || razorpayKeySecret === razorpayKeyId) {
       return new Response(
-        JSON.stringify({ error: 'Razorpay credentials not configured on server' }),
+        JSON.stringify({ error: 'Razorpay credentials (RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET) not configured or invalid on server' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }

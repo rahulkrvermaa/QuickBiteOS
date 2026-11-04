@@ -19,7 +19,7 @@ import { BENCHMARK_ORDERS } from '@/lib/mock-data/benchmark-orders'
 import { BENCHMARK_BUSINESS } from '@/lib/mock-data/benchmark-shop'
 import { getMerchantOrders } from '@/services/order.service'
 import { getActiveBusiness } from '@/services/catalog.service'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { isSupabaseConfigured } from '@/lib/supabase'
 import { subscribeToOrderEvents } from '@/services/realtime.service'
 import { EodReportModal } from '../components/eod-report-modal'
 import type { Order } from '@/types/order'
@@ -57,22 +57,9 @@ export const OverviewPage: React.FC = () => {
       loadOrders()
     }, 5000)
 
-    let pgChannel: any = null
-    if (isSupabaseConfigured) {
-      pgChannel = supabase
-        .channel('overview-orders-feed')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-          loadOrders()
-        })
-        .subscribe()
-    }
-
     return () => {
       unsubscribe()
       clearInterval(pollTimer)
-      if (pgChannel) {
-        supabase.removeChannel(pgChannel)
-      }
     }
   }, [loadOrders])
 

@@ -15,14 +15,10 @@ serve(async (req) => {
     const rawBody = await req.text()
 
     const cleanSecret = (val?: string): string => val?.trim().replace(/^["']|["']$/g, '') ?? ''
-    const webhookSecret = cleanSecret(
-      Deno.env.get('RAZORPAY_WEBHOOK_SECRET') ||
-      Deno.env.get('RAZORPAY_KEY_SECRET') ||
-      Deno.env.get('Test_Key_Secret')
-    )
+    const webhookSecret = cleanSecret(Deno.env.get('RAZORPAY_WEBHOOK_SECRET'))
 
     if (!signature || !webhookSecret) {
-      return new Response('Missing signature or server webhook secret', { status: 400 })
+      return new Response('Missing signature or server RAZORPAY_WEBHOOK_SECRET', { status: 400 })
     }
 
     // 1. Verify Webhook Signature
@@ -147,6 +143,10 @@ serve(async (req) => {
           }
         } else {
           console.error(`Webhook amount/currency mismatch for order ${orderId}: expected ${order?.total_paisa} INR, received ${payment.amount} ${payment.currency}`)
+          return new Response(JSON.stringify({ error: 'Amount or currency mismatch: payment rejected' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          })
         }
       }
     } else if (event.event === 'refund.processed') {
